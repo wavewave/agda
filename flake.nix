@@ -1,11 +1,29 @@
 {
   description = "Agda is a dependently typed programming language / interactive theorem prover.";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/master";
-  inputs.flake-utils.url = "github:numtide/flake-utils";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/master";
+    flake-utils.url = "github:numtide/flake-utils";
+    ghc-debug = {
+      url =
+        "git+https://gitlab.haskell.org/wavewave/ghc-debug.git?ref=wavewave/ghc94";
+      flake = false;
+    };
+  };
 
-  outputs = { self, nixpkgs, flake-utils }: (flake-utils.lib.eachDefaultSystem (system: let
-    pkgs = import nixpkgs { inherit system; overlays = [ self.overlay ]; };
+  outputs = { self, nixpkgs, flake-utils, ghc-debug }: (flake-utils.lib.eachDefaultSystem (system: let
+    pkgs = import nixpkgs {
+      inherit system; overlays = [ self.overlay ];
+      config.allowBroken = true;
+    };
+    hspkgs = pkgs.haskell.packages.ghc942.extend (hself: hsuper: {
+      "ghc-debug-stub" = pkgs.haskell.lib.doJailbreak
+        (hself.callCabal2nix "ghc-debug-stub" "${ghc-debug}/stub" { });
+      "ghc-debug-convention" =
+        hself.callCabal2nix "ghc-debug-convention" "${ghc-debug}/convention"
+        { };
+    });
+
   in {
     packages = {
       inherit (pkgs.haskellPackages) Agda;
@@ -16,20 +34,49 @@
     defaultPackage = self.packages.${system}.Agda;
 
     devShell = let
-      hsenv = pkgs.haskell.packages.ghc942.ghcWithPackages (p: [
-        p.distributive
-        p.indexed-traversable-instances
-        p.comonad
-        p.witherable
-        p.bifunctors
-        p.assoc
-        p.semigroupoids
-        p.these
-        p.strict
-        p.semialign
+      hsenv = hspkgs.ghcWithPackages (p: [
         p.aeson
-        p.tagged
+        p.array
+        p.async
+        p.base
+        p.binary
+        p.blaze-html
+        p.boxes
+        p.bytestring
+        p.case-insensitive
+        p.containers
+        p.data-hash
+        p.deepseq
+        p.directory
+        p.dlist
+        p.edit-distance
+        p.equivalence
+        p.exceptions
+        p.filepath
+        p.ghc-debug-stub
+        p.gitrev
+        p.hashable
+        p.haskeline
+        p.monad-control
+        p.mtl
+        p.murmur-hash
+        p.parallel
+        p.pretty
+        p.process
+        p.regex-tdfa
+        p.split
+        p.stm
+        p.STMonadTrans
+        p.strict
+        p.text
+        p.time
         p.time-compat
+        p.transformers
+        p.unordered-containers
+        p.uri-encode
+        p.vector
+        p.vector-hashtables
+        p.zlib
       ]);
     in
     pkgs.mkShell {
