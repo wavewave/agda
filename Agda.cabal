@@ -202,7 +202,7 @@ library
     build-depends:  text-icu >= 0.7.1.0
 
   if flag(ghc-specter)
-    ghc-options: -fplugin Plugin.GHCSpecter -plugin-package ghc-specter-plugin -j
+    ghc-options: -fplugin Plugin.GHCSpecter -plugin-package ghc-specter-plugin -fwrite-ide-info -fghci-leak-check -j +RTS -s -RTS
     build-depends: ghc-specter-plugin
 
   if os(windows)
