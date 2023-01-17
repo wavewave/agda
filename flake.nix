@@ -16,13 +16,70 @@
       inherit system; overlays = [ self.overlay ];
       config.allowBroken = true;
     };
-    hspkgs = pkgs.haskell.packages.ghc942.extend (hself: hsuper: {
+    hpkgsFor = compiler: pkgs.haskell.packages.${compiler}.extend (hself: hsuper: {
       "ghc-debug-stub" = pkgs.haskell.lib.doJailbreak
         (hself.callCabal2nix "ghc-debug-stub" "${ghc-debug}/stub" { });
       "ghc-debug-convention" =
         hself.callCabal2nix "ghc-debug-convention" "${ghc-debug}/convention"
         { };
     });
+    mkShellFor = compiler:
+      let
+        hsenv = (hpkgsFor compiler).ghcWithPackages (p: [
+          p.aeson
+          p.array
+          p.async
+          p.base
+          p.binary
+          p.blaze-html
+          p.boxes
+          p.bytestring
+          p.case-insensitive
+          p.containers
+          p.data-hash
+          p.deepseq
+          p.directory
+          p.dlist
+          p.edit-distance
+          p.equivalence
+          p.exceptions
+          p.filepath
+          p.ghc-debug-stub
+          p.gitrev
+          p.hashable
+          p.haskeline
+          p.monad-control
+          p.mtl
+          p.murmur-hash
+          p.parallel
+          p.pretty
+          p.process
+          p.regex-tdfa
+          p.split
+          p.stm
+          p.STMonadTrans
+          p.strict
+          p.text
+          p.time
+          p.time-compat
+          p.transformers
+          p.unordered-containers
+          p.uri-encode
+          p.vector
+          p.vector-hashtables
+          p.zlib
+        ]);
+      in pkgs.mkShell {
+        inputsFrom = [ self.defaultPackage.${system} ];
+        packages = with pkgs; [
+          pkg-config
+          zlib
+          icu
+          #haskellPackages.fix-whitespace
+          hsenv
+        ];
+      };
+    supportedCompilers = [ "ghc924" "ghc942" ];
 
   in {
     packages = {
@@ -33,62 +90,8 @@
 
     defaultPackage = self.packages.${system}.Agda;
 
-    devShell = let
-      hsenv = hspkgs.ghcWithPackages (p: [
-        p.aeson
-        p.array
-        p.async
-        p.base
-        p.binary
-        p.blaze-html
-        p.boxes
-        p.bytestring
-        p.case-insensitive
-        p.containers
-        p.data-hash
-        p.deepseq
-        p.directory
-        p.dlist
-        p.edit-distance
-        p.equivalence
-        p.exceptions
-        p.filepath
-        p.ghc-debug-stub
-        p.gitrev
-        p.hashable
-        p.haskeline
-        p.monad-control
-        p.mtl
-        p.murmur-hash
-        p.parallel
-        p.pretty
-        p.process
-        p.regex-tdfa
-        p.split
-        p.stm
-        p.STMonadTrans
-        p.strict
-        p.text
-        p.time
-        p.time-compat
-        p.transformers
-        p.unordered-containers
-        p.uri-encode
-        p.vector
-        p.vector-hashtables
-        p.zlib
-      ]);
-    in
-    pkgs.mkShell {
-      inputsFrom = [ self.defaultPackage.${system} ];
-      packages = with pkgs; [
-        pkg-config
-        zlib
-        icu
-        #haskellPackages.fix-whitespace
-        hsenv
-      ];
-    };
+    devShells = pkgs.lib.genAttrs supportedCompilers mkShellFor;
+
   })) // {
     overlay = final: prev: {
       haskellPackages = prev.haskellPackages.override {
