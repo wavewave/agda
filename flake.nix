@@ -6,7 +6,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     ghc-debug = {
       url =
-        "git+https://gitlab.haskell.org/wavewave/ghc-debug.git?ref=wavewave/ghc94";
+        "git+https://gitlab.haskell.org/ghc/ghc-debug.git?ref=master";
       flake = false;
     };
   };
@@ -68,6 +68,8 @@
           p.vector
           p.vector-hashtables
           p.zlib
+
+          p.eventlog2html
         ]);
       in pkgs.mkShell {
         inputsFrom = [ self.defaultPackage.${system} ];
@@ -78,6 +80,9 @@
           #haskellPackages.fix-whitespace
           hsenv
         ];
+        shellHook = ''
+          export PS1="\n[agda:\w]$ \0"
+        '';
       };
     supportedCompilers = [ "ghc924" "ghc942" ];
 
