@@ -1,6 +1,7 @@
 {
   description = "Agda is a dependently typed programming language / interactive theorem prover.";
 
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/master";
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
   outputs = { self, nixpkgs, flake-utils }: (flake-utils.lib.eachDefaultSystem (system: let
@@ -14,13 +15,31 @@
 
     defaultPackage = self.packages.${system}.Agda;
 
-    devShell = pkgs.mkShell {
+    devShell = let
+      hsenv = pkgs.haskell.packages.ghc942.ghcWithPackages (p: [
+        p.distributive
+        p.indexed-traversable-instances
+        p.comonad
+        p.witherable
+        p.bifunctors
+        p.assoc
+        p.semigroupoids
+        p.these
+        p.strict
+        p.semialign
+        p.aeson
+        p.tagged
+        p.time-compat
+      ]);
+    in
+    pkgs.mkShell {
       inputsFrom = [ self.defaultPackage.${system} ];
       packages = with pkgs; [
         pkg-config
         zlib
         icu
-        haskellPackages.fix-whitespace
+        #haskellPackages.fix-whitespace
+        hsenv
       ];
     };
   })) // {
