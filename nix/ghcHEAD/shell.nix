@@ -1,39 +1,48 @@
-{ ghc_nix, system, pkgs }: let  # ogdfLib
-   fontconf = pkgs.makeFontsConf { fontDirectories = [pkgs.freefont_ttf]; };
-in {
+{
+  system,
+  pkgs
+}: let
+  bootGHC = "ghc925";
+  hsenv = pkgs.haskell.packages.${bootGHC}.ghcWithPackages (p: [
+    p.shake
+    p.QuickCheck
+  ]);
+in
   # ghc.nix shell
-  ghcNixShell = ghc_nix.outputs.devShells.${system}.default.overrideAttrs
-    (attrs: {
-      buildInputs = attrs.buildInputs
-      ++ [
-        pkgs.epoxy.dev
-        pkgs.gd
-        pkgs.gobject-introspection
-        pkgs.gtk3
-        pkgs.libdatrie
-        pkgs.libdeflate
-        pkgs.librsvg.dev
-        pkgs.libthai
-        pkgs.pcre
-        pkgs.pcre2
-        pkgs.xorg.libXdmcp.dev
-        pkgs.libxkbcommon.dev
-        pkgs.xorg.libXtst
-        pkgs.pkgconfig
-        #ogdfLib
+  pkgs.mkShell {
+    name = "ghcHEAD-shell";
+    buildInputs = [
+      hsenv
+      pkgs.cabal-install
+      pkgs.alex
+      pkgs.happy
+      pkgs.python3
 
-        pkgs.socat
-      ]
-      ++ pkgs.lib.optional pkgs.stdenv.isLinux [pkgs.libselinux.dev pkgs.libsepol.dev pkgs.util-linux.dev];
+      pkgs.autoconf
+      pkgs.automake
+      pkgs.m4
+      pkgs.less
+      pkgs.gmp.dev
+      pkgs.gmp.out
+      pkgs.glibcLocales
+      pkgs.ncurses.dev
+      pkgs.ncurses.out
+      pkgs.zlib.dev
+      pkgs.zlib.out
 
-
-      shellHook = ''
-        echo "ghc.nix shell hook"
-        ${attrs.shellHook}
-        echo "now entering into ghcHEAD shell. Please set PATH to have your target GHC bin directory."
-        export FONTCONFIG_FILE="${fontconf}"
-        export PANGOCAIRO_BACKEND=fc
-        export PS1="\n[ghc-specter:ghcHEAD:\w]$ \0"
-      '';
-    });
-}
+      # Agda dep
+      pkgs.numactl
+    ];
+    CONFIGURE_ARGS = [
+      "--with-gmp-includes=${pkgs.gmp.dev}/include"
+      "--with-gmp-libraries=${pkgs.gmp}/lib"
+      "--with-curses-includes=${pkgs.ncurses.dev}/include"
+      "--with-curses-libraries=${pkgs.ncurses.out}/lib"
+    ];
+    shellHook = ''
+      export CC=${pkgs.stdenv.cc}/bin/cc
+      export GHC=${hsenv}/bin/ghc
+      export GHCPKG=${hsenv}/bin/ghc-pkg
+      export PS1="\n[ghcHEAD-agda:\w]$ \0"
+    '';
+  }
