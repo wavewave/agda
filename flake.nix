@@ -9,9 +9,21 @@
         "git+https://gitlab.haskell.org/ghc/ghc-debug.git?ref=master";
       flake = false;
     };
+    hackage-index = {
+      type = "file";
+      flake = false;
+      url =
+        "https://api.github.com/repos/commercialhaskell/all-cabal-hashes/tarball/13a91ab76cfac2098eff2780f3d3b6224352a7a2";
+    };
+    ghc_nix = {
+      url = "github:wavewave/ghc.nix/fix-hash-again";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs-unstable.follows = "nixpkgs";
+      inputs.all-cabal-hashes.follows = "hackage-index";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, ghc-debug }: (flake-utils.lib.eachDefaultSystem (system: let
+  outputs = { self, nixpkgs, flake-utils, ghc-debug, ... }@inputs: (flake-utils.lib.eachDefaultSystem (system: let
     pkgs = import nixpkgs {
       inherit system; overlays = [ self.overlay ];
       config.allowBroken = true;
@@ -86,6 +98,13 @@
       };
     supportedCompilers = [ "ghc924" "ghc942" ];
 
+    shellGHCHEAD = {
+      "ghcHEAD" = (import ./nix/ghcHEAD/shell.nix {
+        inherit (inputs) ghc_nix;
+        inherit system pkgs ;
+      }).ghcNixShell;
+    };
+
   in {
     packages = {
       inherit (pkgs.haskellPackages) Agda;
@@ -95,7 +114,7 @@
 
     defaultPackage = self.packages.${system}.Agda;
 
-    devShells = pkgs.lib.genAttrs supportedCompilers mkShellFor;
+    devShells = pkgs.lib.genAttrs supportedCompilers mkShellFor // shellGHCHEAD;
 
   })) // {
     overlay = final: prev: {
