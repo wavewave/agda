@@ -197,6 +197,7 @@ common language
       -fspecialise-aggressively
 
   ghc-options:
+      -j
       -fprint-potential-instances
       -- ASR (2022-05-31). Workaround to Issue #5932.
       -Werror

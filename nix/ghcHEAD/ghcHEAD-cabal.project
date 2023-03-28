@@ -18,6 +18,7 @@ allow-newer:
   ghc,
   ghc-bignum,
   ghc-prim,
+  haskeline,
   integer-gmp,
   mtl,
   primitive,
@@ -31,6 +32,7 @@ constraints:
   ghc installed,
   ghc-bignum installed,
   ghc-prim installed,
+  haskeline installed,
   integer-gmp installed,
   template-haskell installed
 
@@ -66,7 +68,6 @@ constraints:
   futhark ==0.22.7,
   futhark-data ==1.1.0.0,
   futhark-server ==1.2.1.0,
-  haskeline ==0.7.5.0,
   haxl ==2.4.0.0,
   hgeometry ==0.14,
   hgeometry-combinatorial ==0.14,
