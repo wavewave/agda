@@ -198,6 +198,9 @@ common language
       -fspecialise-aggressively
 
   ghc-options:
+      -fplugin Plugin.GHCSpecter
+      -plugin-package ghc-specter-plugin
+      -j
       -- ASR (2022-05-31). Workaround to Issue #5932.
       -Werror
       -Werror=cpp-undef
